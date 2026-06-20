@@ -4,6 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EstateCare — Luxury Home Watch & Inspection</title>
+<link rel="icon" type="image/png" href="Logo (Master).png">
+<link rel="apple-touch-icon" href="Logo (Master).png">
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB98vP5IQOI0Jf7-97nrQ37HGVg7d8F5As",
+    authDomain: "estatecare-html.firebaseapp.com",
+    projectId: "estatecare-html",
+    storageBucket: "estatecare-html.firebasestorage.app",
+    messagingSenderId: "7026276636",
+    appId: "1:7026276636:web:2c065fb9028de6f8c562d9"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window._submitWaitlistFirestore = async function(email, postal){
+    await addDoc(collection(db, "waitlist"), {
+      email: email,
+      postalCode: postal,
+      submittedAt: serverTimestamp()
+    });
+  };
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -323,6 +349,7 @@ function validPostal(v){
 function submitWaitlist(){
   var emailEl=document.getElementById('waitEmail');
   var postalEl=document.getElementById('waitPostal');
+  var btnEl=document.querySelector('.waitlist-submit');
   var email=emailEl.value.trim();
   var postal=postalEl.value.trim();
 
@@ -345,13 +372,22 @@ function submitWaitlist(){
 
   if(!valid) return;
 
-  // Send to info@myestatecare.ca via mailto
-  var subject=encodeURIComponent('EstateCare Waitlist — '+postal);
-  var body=encodeURIComponent('New waitlist signup:\n\nEmail: '+email+'\nPostal Code: '+postal+'\nDate: '+new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}));
-  window.location.href='mailto:info@myestatecare.ca?subject='+subject+'&body='+body;
-  document.getElementById('successMsg').classList.add('show');
-  emailEl.value='';
-  postalEl.value='';
+  btnEl.textContent='Submitting…';
+  btnEl.disabled=true;
+
+  window._submitWaitlistFirestore(email, postal).then(function(){
+    document.getElementById('successMsg').classList.add('show');
+    emailEl.value='';
+    postalEl.value='';
+    btnEl.textContent='Join Waitlist';
+    btnEl.disabled=false;
+  }).catch(function(err){
+    console.error('Waitlist submit error:', err);
+    btnEl.textContent='Join Waitlist';
+    btnEl.disabled=false;
+    emailEl.style.borderColor='#e05c5c';
+    emailEl.placeholder='Something went wrong — please try again';
+  });
 }
 
 // Allow Enter key on email input
